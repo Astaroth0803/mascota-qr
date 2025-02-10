@@ -1,47 +1,62 @@
-<form action="{{ route('pet.store') }}" method="POST" class="max-w-sm mx-auto" enctype="multipart/form-data">
+<form action="{{ route('mascotaqr.store') }}" method="POST" class="max-w-sm mx-auto" enctype="multipart/form-data">
     @csrf
     <div id="formulario_mascotas">
-    <div class="mb-5">
-        <label for="nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre</label>
-        <input type="text" name="nombre" id="nombre" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value="{{ old('nombre') }}" placeholder="Nombre de la mascota" />
-    </div>
+        <div class="mb-5">
+            <label for="nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Nombre</label>
+            <input type="text" name="nombre" id="nombre" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value="{{ old('nombre') }}" placeholder="Nombre de la mascota" required />
+        </div>
 
-    <div class="mb-5">
-        <label for="especie" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Especie</label>
-        <input type="text" name="especie" id="especie" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value="{{ old('especie') }}" placeholder="Especie de la mascota" />
-    </div>
+        <div class="mb-5">
+            <label for="especie" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Especie</label>
+            <input type="text" name="especie" id="especie" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value="{{ old('especie') }}" placeholder="Especie de la mascota" required />
+        </div>
 
-    <div class="mb-5">
-        <label for="raza" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Raza</label>
-        <input type="text" name="raza" id="raza" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value="{{ old('raza') }}" placeholder="Raza de la mascota" />
-    </div>
+        <div class="mb-5">
+            <label for="raza" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Raza</label>
+            <input type="text" name="raza" id="raza" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value="{{ old('raza') }}" placeholder="Raza de la mascota" required />
+        </div>
 
-    <div class="mb-5">
-        <label for="edad" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Edad</label>
-        <input type="text" name="edad" id="edad" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value="{{ old('edad') }}" placeholder="Edad de la mascota" />
-    </div>
+        <div class="mb-5">
+            <label for="edad" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Edad</label>
+            <input type="text" name="edad" id="edad" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value="{{ old('edad') }}" placeholder="Edad de la mascota" required />
+        </div>
 
-    <div class="mb-5">
-        <label for="sexo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Sexo</label>
-        <input type="text" name="sexo" id="sexo" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value="{{ old('sexo') }}" placeholder="Sexo de la mascota" />
+        <div class="mb-5">
+            <label for="sexo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Sexo</label>
+            <input type="text" name="sexo" id="sexo" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value="{{ old('sexo') }}" placeholder="Sexo de la mascota" required />
+        </div>
+
+        <div class="mb-5" id="nombre_owner1">
+            <label for="nombre_owner" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Nombre del dueño</label>
+            <input type="text" name="nombre_owner" id="nombre_owner" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value="{{ old('nombre_owner') }}" placeholder="Nombre del dueño" required />
+        </div>
+
+        <div class="mb-5" id="apellido_owner1">
+            <label for="apellido_owner" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Apellido del dueño</label>
+            <input type="text" name="apellido_owner" id="apellido_owner" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value="{{ old('apellido_owner') }}" placeholder="Apellido del dueño" required />
+        </div>
+
+        <div class="mb-5" id="telefono_owner1">
+            <label for="telefono_owner" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Teléfono</label>
+            <input type="text" name="telefono_owner" id="telefono_owner" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value="{{ old('telefono_owner') }}" placeholder="Teléfono" required />
+        </div>
+
+        <div class="mb-5" id="correo_owner1">
+            <label for="correo_owner" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Correo</label>
+            <input type="email" name="correo_owner" id="correo_owner" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value="{{ old('correo_owner') }}" placeholder="Correo Electrónico" required />
+            @error('correo_owner')
+                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+            @enderror
+        </div>
+
+        <div class="mb-5" id="id_pago_yappy1">
+            <label for="id_pago_yappy" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Id del pago en Yappy</label>
+            <input type="text" name="id_pago_yappy" id="id_pago_yappy" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value="{{ old('id_pago_yappy') }}" placeholder="Id del pago realizado" required />
+        </div>
+
+        <button type="submit" id="btm_enviar_form"
+            class="text-blue-700 hover:text-white border border-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 dark:border-blue-500 dark:text-blue-500 dark:hover:text-white dark:hover:bg-blue-500 dark:focus:ring-blue-800">
+            Registrar
+        </button>
     </div>
-    
-    <div id="drop_zone" class="flex items-center justify-center w-full">
-            @csrf
-            <div class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600">
-                <label for="dropzone-file" class="flex flex-col items-center justify-center w-full h-full">
-                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                        <svg class="w-8 h-8 mb-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
-                        </svg>
-                        <p class="mb-2 text-sm text-gray-500 dark:text-gray-400"><span class="font-semibold">Arrastra y suelta el archivo aquí</span> o haz clic para seleccionarlo</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">PDF ONLY (MAX. 4MB)</p>
-                    </div>
-                    <input id="dropzone-file" name="vaccine_file" type="file" accept="application/pdf" />
-                </label>
-            </div>
-            <br>
-            <br>
-    <button id="btm_enviar_form" type="submit">Registrar Mascota</button>
 </form>
-</div>

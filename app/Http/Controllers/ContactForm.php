@@ -20,7 +20,7 @@ class ContactForm extends Controller
         // Simular el envío de correo
         Mail::raw($validated['message'], function ($mail) use ($validated) {
             $mail->from($validated['email']);
-            $mail->to('elawebapp@gmail.com') // Cambia este correo al tuyo
+            $mail->to('elawebapp@gmail.com') 
                 ->subject($validated['subject']);
         });
 

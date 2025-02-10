@@ -2,23 +2,24 @@
 
 namespace App\Providers;
 
+use Illuminate\Pagination\Paginator;
+use App\Services\PaymentService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
-    public function register(): void
+    public function register()
     {
-        //
+        $this->app->bind(PaymentService::class, function ($app) {
+            return new PaymentService();
+        });
+        
     }
 
-    /**
-     * Bootstrap any application services.
-     */
-    public function boot(): void
+    public function boot()
     {
-        //
-    }
+        Paginator::useTailwind();
+    
+    
+}
 }

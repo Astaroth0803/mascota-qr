@@ -21,16 +21,8 @@
     <p>Nuestro servicio de <strong>Medical information in cloud</strong>, es un servicio en la nube en donde guardamos la informacion medica de tu mascota en la nube para que tu amigo pueda llevarlo a donde sea que vaya </p>
     <br>
     <div class="max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
-    <a href="#">
+    <a href="/mascotaqr">
         <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">MEDICAL PET INFORMATION IN CLOUD</h5>
-
-<a href="{{ route('register', [
-    'redirect' => urlencode(route('registrar.mascota')),
-    'product_id' => 1, 
-    'product_type' => 'placa_qr'
-]) }}" class="btn-comprar">
-    Comprar Placa QR
-</a>
 </div>
 
 </main>

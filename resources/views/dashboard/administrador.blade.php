@@ -1,11 +1,9 @@
 <!-- resources/views/dashboard.blade.php -->
-
 <x-app-layout>
     <x-slot name="header">
+        
         <h2>{{ __('Dashboard - Pet Management') }}</h2>
     </x-slot>
-
-    <x-formulario_mascotas /> 
 <br>
     <table class="min-w-full table-auto mt-4">
         <thead>
@@ -38,13 +36,12 @@
                             <span class="text-gray-500 italic">No adjuntado</span>
                         @endif
                     </td>
-                    <td class="py-2 px-4 border-b">
-                        <!-- Ejemplo de botón para editar -->
-                        <a href="{{ route('pet.edit', $pet->id) }}" 
-                           class="text-indigo-500 hover:underline">Editar</a>
-                    </td>
                 </tr>
             @endforeach
         </tbody>
     </table>
-</x-app-layout>
+
+<x-notificaciones />
+</x-app-layout> 
+
+<x-footer />
