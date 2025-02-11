@@ -8,6 +8,8 @@
         @vite(['resources/css/main.css'])
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
+        <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
         <!-- Scripts -->
@@ -17,7 +19,6 @@
     </head>
     <body class="font-sans antialiased">
         <div class="min-h-screen dark:bg-gray-050">
-            @include('layouts.navigation')
 
             <!-- Page Heading -->
             @isset($header)
@@ -32,5 +33,7 @@
                 {{ $slot }}
             </main>
         </div>
+        <script src="https://cdn.jsdelivr.net/npm/flowbite@3.0.0/dist/flowbite.min.js"></script>
+
     </body>
 </html>

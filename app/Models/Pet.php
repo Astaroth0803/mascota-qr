@@ -29,4 +29,8 @@ class Pet extends Model
     {
         return $this->hasOne(Payment::class);  // Esto asocia un pago a cada mascota
     }
+    public function user()
+{
+    return $this->belongsTo(User::class);
+}
 }

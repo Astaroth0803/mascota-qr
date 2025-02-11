@@ -40,8 +40,7 @@
             @endforeach
         </tbody>
     </table>
-
-<x-notificaciones />
+    <x-sidebar />
 </x-app-layout> 
 
 <x-footer />

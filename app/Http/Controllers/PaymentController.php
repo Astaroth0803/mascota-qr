@@ -8,15 +8,18 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 
 class PaymentController extends Controller
-{
-    public function verifyPayment($petId)
+{public function verifyPayment($petId)
     {
         // Obtener el pago asociado a la mascota
         $payment = Payment::where('pet_id', $petId)->firstOrFail();
-
+    
         // Marcar el pago como verificado
         $payment->update(['status' => Payment::STATUS_VERIFIED]);
-
+    
+        // Actualizar el estado de la mascota si lo deseas (opcional)
+        $pet = $payment->pet;
+        $pet->user->update(['verificado' => true]); // Cambia el campo 'verificado' a true
+    
         // Registrar la verificación del pago
         Log::info('Pago verificado', [
             'id' => $payment->id,
@@ -24,18 +27,19 @@ class PaymentController extends Controller
             'payment_id' => $payment->payment_id,
             'status' => $payment->status,
         ]);
-
+    
         // Enviar correo electrónico con los datos de acceso
         Mail::to($payment->pet->correo_owner)->send(new UserCredentialsMail($payment->pet->correo_owner, $payment->pet->user->password));
-
+    
         // Registrar el envío del correo
         Log::info('Correo enviado', [
             'destinatario' => $payment->pet->correo_owner,
             'mascota_id' => $payment->pet_id,
         ]);
-
-        return redirect()->route('admin.solicitudes')->with('success', 'Pago verificado y correo enviado.');
+    
+        return redirect()->route('dashboard.solicitudes')->with('success', 'Pago verificado y correo enviado.');
     }
+    
 
     public function rejectRequest($petId)
     {
@@ -63,6 +67,6 @@ class PaymentController extends Controller
             'usuario_id' => $payment->pet->user_id,
         ]);
 
-        return redirect()->route('admin.solicitudes')->with('success', 'Solicitud rechazada y datos eliminados permanentemente.');
+        return redirect()->route('dashboard.solicitudes')->with('success', 'Solicitud rechazada y datos eliminados permanentemente.');
     }
 }

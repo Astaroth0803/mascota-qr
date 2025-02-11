@@ -24,10 +24,21 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
+        // Autenticación
         $request->authenticate();
 
+        // Regenerar la sesión
         $request->session()->regenerate();
 
+        // ✅ Actualizar la columna 'verificado' si es necesario
+        $user = Auth::user(); // Assuming your User model is App\Models\User
+        $user = \App\Models\User::find($user->id);
+        if ($user->verificado == 0) {
+            $user->verificado = 1;
+            $user->save();
+        }
+
+        // Redirigir a la ruta deseada (dashboard)
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
