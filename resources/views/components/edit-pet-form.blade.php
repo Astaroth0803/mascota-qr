@@ -1,7 +1,7 @@
 <!-- resources/views/components/edit-pet-form.blade.php -->
 <form action="{{ route('pet.update', $pet->id) }}" method="POST" class="max-w-sm mx-auto">
     @csrf
-    @method('PUT') <!-- Necesitas este método para indicar que es una actualización -->
+    @method('post') <!-- Necesitas este método para indicar que es una actualización -->
 
     <!-- Aquí rellenarás los campos con los datos de la mascota -->
     <div class="mb-5">

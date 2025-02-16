@@ -7,19 +7,20 @@
     <title>Dashboard</title>
     <!-- Puedes agregar tus hojas de estilo y scripts aquí -->
     @vite('resources/css/app.css')  <!-- Para vincular tu archivo CSS -->
+    @vite(['resources/css/main.css'])
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
     
 </head>
+
 <body>
-    <div class="container mx-auto">
-        <header class="bg-gray-800 text-white p-4">
-            <h1 class="text-2xl">Dashboard</h1>
+<x-app-layout>
+        <header>
             <!-- Aquí puedes agregar un navbar si lo deseas -->
         </header>
-
+        <x-sidebar />
         <main class="py-6">
             @yield('content') <!-- Esta sección se sobrescribirá por las vistas hijas -->
-            <x-sidebar></x-sidebar>
+            
         </main>
     </div>
 

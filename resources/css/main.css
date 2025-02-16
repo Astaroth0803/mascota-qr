@@ -90,3 +90,10 @@
     margin-right: 1rem;
 
 }
+
+#manu-dash{
+    position: fixed;
+    top: 0.4rem;
+    left: 0;
+
+}

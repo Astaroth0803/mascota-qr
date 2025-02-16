@@ -42,5 +42,3 @@
     </table>
     <x-sidebar />
 </x-app-layout> 
-
-<x-footer />

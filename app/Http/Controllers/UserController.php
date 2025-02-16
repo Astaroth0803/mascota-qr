@@ -2,36 +2,132 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Solicitud;
 use App\Models\User;
+use App\Models\Pet;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\UserCredentialsMail;
 
 class UserController extends Controller
 {
-    public function createUser(Request $request)
+ // Actualizar la contraseña de un usuario
+    public function updatePassword(Request $request, $id)
+{
+    $request->validate([
+        'password' => 'required|string|min:8|confirmed',
+    ], [
+        'password.required'  => 'El campo contraseña es obligatorio.',
+        'password.min'       => 'La contraseña debe tener al menos 8 caracteres.',
+        'password.confirmed' => 'Las contraseñas no coinciden.',
+    ]);
+
+    $usuario = User::findOrFail($id);
+    $usuario->password = Hash::make($request->password);
+    $usuario->save();
+
+    return redirect()->route('dashboard.usuarios')->with('success', '¡Contraseña actualizada correctamente!');
+}
+    public function editPassword($id)
     {
-        // Validar los datos del formulario
-        $validated = $request->validate([
-            'nombre_owner' => 'required|string|max:255',
-            'apellido_owner' => 'required|string|max:255',
-            'correo_owner' => 'required|email|unique:users,email',
-            'telefono_owner' => 'required|string|max:255',
-        ]);
+        $usuario = User::findOrFail($id);
+        return view('dashboard.edit-password', compact('usuario'));
+    }
 
-        // Crear el usuario
+
+    // Listar usuarios (para el administrador)
+    public function index(Request $request)
+    {
+        $usuarios = User::query();
+    
+        // Filtro por búsqueda en nombre o email
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $usuarios->where(function ($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+    
+        // Filtro por rol (usando la relación 'roles' de Spatie)
+        if ($request->filled('role')) {
+            $role = $request->role;
+            $usuarios->whereHas('roles', function ($query) use ($role) {
+                $query->where('name', $role);
+            });
+        }
+    
+        $usuarios = $usuarios->paginate(10);
+    
+        return view('dashboard.usuarios', compact('usuarios'));
+    }
+    
+    
+
+    // Crear usuario y mascota desde una solicitud
+    public function createUserFromSolicitud($id)
+    {
+        $solicitud = Solicitud::findOrFail($id);
+        $password = Str::random(10);
+
         $user = User::create([
-            'name' => $validated['nombre_owner'] . ' ' . $validated['apellido_owner'],
-            'email' => $validated['correo_owner'],
-            'password' => Hash::make(Str::random(10)), // Contraseña aleatoria
+            'name' => "$solicitud->nombre_owner $solicitud->apellido_owner",
+            'email' => $solicitud->correo_owner,
+            'password' => Hash::make($password),
         ]);
 
-        // Asignar el rol "cliente_qr" al usuario
         $user->assignRole('cliente_qr');
 
-        return [
-            'user' => $user,
-            'password' => $user->password, // Devolver la contraseña para usarla en el siguiente paso
-        ];
+        Pet::create([
+            'nombre' => $solicitud->nombre,
+            'especie' => $solicitud->especie,
+            'raza' => $solicitud->raza,
+            'edad' => $solicitud->edad,
+            'sexo' => $solicitud->sexo,
+            'nombre_owner' => $solicitud->nombre_owner,
+            'apellido_owner' => $solicitud->apellido_owner,
+            'telefono_owner' => $solicitud->telefono_owner,
+            'correo_owner' => $solicitud->correo_owner,
+            'user_id' => $user->id,
+        ]);
+
+        Mail::to($solicitud->correo_owner)->send(new UserCredentialsMail($solicitud->correo_owner, $password));
+        $solicitud->delete();
+
+        return redirect()->route('dashboard.solicitudes')->with('success', 'Solicitud aceptada. Usuario y mascota creados.');
+    }
+
+    // Ver roles de un usuario
+    public function showRoles($id)
+    {
+        $user = User::findOrFail($id);
+        return view('dashboard.user_roles', ['user' => $user, 'roles' => $user->getRoleNames()]);
+    }
+
+    // Actualizar roles de un usuario
+    public function updateRoles(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+        $request->validate([
+            'roles' => 'required|array',
+            'roles.*' => 'exists:roles,name',
+        ]);
+        
+        $user->syncRoles($request->roles);
+        return redirect()->route('dashboard.usuarios')->with('success', 'Roles actualizados correctamente.');
+    }
+    public function destroy($id)
+    {
+        // Busca el usuario por su ID
+        $user = User::findOrFail($id);
+
+        // Elimina el usuario
+        $user->delete();
+
+        // Redirige a una página de tu elección, con un mensaje de éxito
+        return redirect()->route('dashboard.usuarios')->with('success', 'Usuario eliminado correctamente.');
     }
 }
