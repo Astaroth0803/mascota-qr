@@ -3,6 +3,7 @@
         
         <h2>{{ __('Dashboard - Pet Management') }}</h2>
     </x-slot>
+    
 @if (session('error'))
     <div class="bg-red-500 text-white p-3 rounded mb-4">
         {{ session('error') }}

@@ -10,21 +10,29 @@ class RoleSeeder extends Seeder
     public function run()
     {
         // Crear permisos si no existen
-        Permission::firstOrCreate(['name' => 'ver solicitudes']);
-        Permission::firstOrCreate(['name' => 'verificar pagos']);
-        Permission::firstOrCreate(['name' => 'rechazar solicitudes']);
-        Permission::firstOrCreate(['name' => 'ver perfil']);
-        // Añadir más permisos si es necesario
+        $permissions = [
+            'ver solicitudes',
+            'verificar pagos',
+            'rechazar solicitudes',
+            'ver perfil',
+            'ver_mascotas',
+        ];
+
+        foreach ($permissions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
 
         // Crear roles si no existen
+        $superAdminRole = Role::firstOrCreate(['name' => 'super_admin']);
         $adminRole = Role::firstOrCreate(['name' => 'administrador']);
         $clienteQrRole = Role::firstOrCreate(['name' => 'cliente_qr']);
 
+        
         // Asignar todos los permisos al rol de administrador
-        $permissions = Permission::all(); // Obtener todos los permisos
-        $adminRole->syncPermissions($permissions); // Asignar todos los permisos al rol 'administrador'
+        $adminRole->syncPermissions(Permission::all());
+        $superAdminRole->syncPermissions(Permission::all());
 
         // Asignar permisos específicos al rol 'cliente_qr'
-        $clienteQrRole->givePermissionTo('ver perfil');
+        $clienteQrRole->syncPermissions(['ver perfil', 'ver_mascotas']);
     }
 }

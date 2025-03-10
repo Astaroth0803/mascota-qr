@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use Illuminate\Support\Facades\Auth;
 use App\Models\Pet;
 use App\Models\Payment;
 use App\Services\PaymentService;
@@ -83,9 +83,20 @@ class PetController extends Controller
     // Método para el dashboard del cliente
     public function dashboardCliente()
     {
-        // Obtener las mascotas asociadas al cliente
-        $pets = Pet::where('user_id', \Illuminate\Support\Facades\Auth::user()->id)->get();
+        // Verificar si el usuario tiene el permiso 'ver_mascotas'
+        if (!Auth::user()->can('ver_mascotas')) {
+            return redirect()->route('dashboard')->with('error', 'No tienes permiso para ver tus mascotas.');
+        }
+    // Obtener el usuario actual
+    $user = Auth::user();
 
+    // Obtener las mascotas asociadas al cliente por ID y correo
+    $pets = Pet::with('payment')
+        ->where(function ($query) use ($user) {
+            $query->where('user_id', $user->id)
+                  ->orWhere('correo_owner', $user->email);
+        })
+        ->get();
         return view('dashboard.cliente', compact('pets'));
     }
 

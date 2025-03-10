@@ -23,9 +23,9 @@
             
         </main>
     </div>
-
     @stack('scripts') <!-- Puedes agregar scripts específicos aquí -->
-    <script src="https://cdn.jsdelivr.net/npm/flowbite@3.0.0/dist/flowbite.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/flowbite@3.0.0/dist/flowbite.min.js">
+    </script>
+</x-app-layout>
 </body>
 </html>

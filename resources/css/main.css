@@ -32,6 +32,7 @@
     left: 35rem;
     text-align: center;
 }
+
 #btm_enviar_form {
     position: relative;
     border-radius: 10px 10px 10px;
@@ -95,5 +96,11 @@
     position: fixed;
     top: 0.4rem;
     left: 0;
+
+}
+
+#solicitudes-tabla{
+    position:static;
+    margin-top: -25rem;
 
 }

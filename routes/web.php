@@ -38,7 +38,7 @@ Route::middleware('auth')->group(function () {
         
         if ($user->hasRole('cliente_qr')) {
             return redirect()->route('dashboard.cliente');
-        } elseif ($user->hasRole('administrador')) {
+        } elseif ($user->hasRole('administrador|super_admin')) {
             return redirect()->route('dashboard.administrador');
         }
         return redirect('/');
@@ -50,7 +50,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/registrar-mascota', [PetController::class, 'create'])->name('registrar.mascota');
     });
 // Rutas del dashboard para administradores (solo para administradores)
-Route::prefix('dashboard/administrador')->middleware('role:administrador')->group(function () {
+Route::prefix('dashboard/administrador')->middleware('role:administrador|super_admin')->group(function () {
     // Vista principal para administradores
     Route::get('/', [PetController::class, 'adminDashboard'])->name('dashboard.administrador');
     
@@ -92,5 +92,13 @@ Route::prefix('dashboard/administrador')->middleware('role:administrador')->grou
         Route::patch('/', [ProfileController::class, 'update'])->name('profile.update');
         Route::delete('/', [ProfileController::class, 'destroy'])->name('profile.destroy');
     });
+
+    Route::get('/my-role', function () {
+        $user = Auth::user();
+        return response()->json([
+            'roles' => $user->getRoleNames(),
+            'permissions' => $user->getAllPermissions()->pluck('name')
+        ]);
+    })->name('my.role');
 });
 

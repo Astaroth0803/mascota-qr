@@ -1,7 +1,5 @@
-<!-- resources/views/dashboard.blade.php -->
 <x-app-layout>
     <x-slot name="header">
-        
         <h2>{{ __('Dashboard - Pet Management') }}</h2>
     </x-slot>
 <br>
@@ -11,21 +9,21 @@
                 <th class="py-2 px-4 border-b">Nombre</th>
                 <th class="py-2 px-4 border-b">Especie</th>
                 <th class="py-2 px-4 border-b">Raza</th>
-                <th class="py-2 px-4 border-b">Edad</th>
+                <th class="py-2 px-4 border-b">Edad</th> 
                 <th class="py-2 px-4 border-b">Sexo</th>
-                <th class="py-2 px-4 border-b">Vacunas (PDF)</th>
-                <th class="py-2 px-4 border-b">Acciones</th>
+                <th class="py-2 px-4 border-b">Vacunas (PDF)</th>  
+            <th class="py-2 px-4 border-b">Acciones</th>   
             </tr>
         </thead>
         <tbody>
             @foreach ($pets as $pet)
-                <tr>
-                    <td class="py-2 px-4 border-b">{{ $pet->nombre }}</td>
-                    <td class="py-2 px-4 border-b">{{ $pet->especie }}</td>
-                    <td class="py-2 px-4 border-b">{{ $pet->raza }}</td>
-                    <td class="py-2 px-4 border-b">{{ $pet->edad }}</td>
-                    <td class="py-2 px-4 border-b">{{ $pet->sexo }}</td>
-                    <td class="py-2 px-4 border-b">
+            <tr>
+                <td class="py-2 px-4 border-b">{{ $pet->nombre }}</td>
+                <td class="py-2 px-4 border-b">{{ $pet->especie }}</td>
+                <td class="py-2 px-4 border-b">{{ $pet->raza }}</td>
+                <td class="py-2 px-4 border-b">{{ $pet->edad }}</td>
+                <td class="py-2 px-4 border-b">{{ $pet->sexo }}</td>
+                <td class="py-2 px-4 border-b">
                         @if ($pet->vaccine_file)
                             <a href="{{ asset('storage/' . $pet->vaccine_file) }}" 
                                target="_blank" 
