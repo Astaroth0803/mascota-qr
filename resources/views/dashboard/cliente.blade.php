@@ -5,6 +5,12 @@
         </x-slot>
 
         <br>
+        @if (session('success'))
+        <div class="bg-green-500 text-white p-4 rounded mb-4">
+            {{ session('success') }}
+        </div>
+        @endif
+
         @if (isset($error))
             <div class="bg-red-500 text-white p-2 rounded mb-4">
                 {{ $error }}
@@ -23,7 +29,7 @@
                     <th class="py-2 px-4 border-b">Acciones</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody style="text-align: center">
                 @foreach ($pets as $pet)
                     <tr>
                         <td class="py-2 px-4 border-b">{{ $pet->nombre }}</td>
@@ -43,6 +49,10 @@
                             @endif
                         </td>
                         <td class="py-2 px-4 border-b">
+                            <!-- Botón de "Ver más" o "Editar" -->
+                            <a href="{{ route('dashboard.show', $pet->id) }}" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition">Ver</a>
+
+                            <a href="{{ route('dashboard.edit', $pet->id) }}" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition">Editar</a>
                         </td>
                     </tr>
                 @endforeach
@@ -53,5 +63,15 @@
             <p>No tienes permiso para ver las mascotas.</p>
         </div>
     @endcan
+
+    <br>
+    <!-- Botón para agregar mascota -->
+    <div style="margin-left: 0.3rem"  class="mb-4">
+        <a href="{{ route('pets.create') }}" 
+           class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-green-600 transition">
+            + Agregar Mascota
+        </a>
+    </div>
+
     <x-sidebar />
 </x-app-layout>

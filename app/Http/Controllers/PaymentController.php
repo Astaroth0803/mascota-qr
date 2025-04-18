@@ -8,65 +8,74 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 
 class PaymentController extends Controller
-{public function verifyPayment($petId)
+{
+    public function verifyPayment($petId)
     {
-        // Obtener el pago asociado a la mascota
-        $payment = Payment::where('pet_id', $petId)->firstOrFail();
+        try {
+            // Obtener el pago con eager loading para evitar consultas adicionales
+            $payment = Payment::with('pet.user')->where('pet_id', $petId)->firstOrFail();
     
-        // Marcar el pago como verificado
-        $payment->update(['status' => Payment::STATUS_VERIFIED]);
+            // Marcar el pago como verificado
+            $payment->update(['status' => Payment::STATUS_VERIFIED]);
     
-        // Actualizar el estado de la mascota si lo deseas (opcional)
-        $pet = $payment->pet;
-        $pet->user->update(['verificado' => true]); // Cambia el campo 'verificado' a true
+            // Actualizar el estado de la mascota si lo deseas (opcional)
+            $payment->pet->user->update(['verificado' => true]); // Cambia el campo 'verificado' a true
     
-        // Registrar la verificación del pago
-        Log::info('Pago verificado', [
-            'id' => $payment->id,
-            'mascota_id' => $payment->pet_id,
-            'payment_id' => $payment->payment_id,
-            'status' => $payment->status,
-        ]);
+            // Registrar la verificación del pago
+            Log::info('Pago verificado', [
+                'id' => $payment->id,
+                'mascota_id' => $payment->pet_id,
+                'payment_id' => $payment->payment_id,
+                'status' => $payment->status,
+            ]);
     
-        // Enviar correo electrónico con los datos de acceso
-        Mail::to($payment->pet->correo_owner)->send(new UserCredentialsMail($payment->pet->correo_owner, $payment->pet->user->password));
+            // Enviar correo electrónico con los datos de acceso
+            Mail::to($payment->pet->correo_owner)->send(new UserCredentialsMail($payment->pet->correo_owner, $payment->pet->user->password));
     
-        // Registrar el envío del correo
-        Log::info('Correo enviado', [
-            'destinatario' => $payment->pet->correo_owner,
-            'mascota_id' => $payment->pet_id,
-        ]);
+            // Registrar el envío del correo
+            Log::info('Correo enviado', [
+                'destinatario' => $payment->pet->correo_owner,
+                'mascota_id' => $payment->pet_id,
+            ]);
     
-        return redirect()->route('dashboard.solicitudes')->with('success', 'Pago verificado y correo enviado.');
+            return redirect()->route('dashboard.solicitudes')->with('success', 'Pago verificado y correo enviado.');
+        } catch (\Exception $e) {
+            Log::error('Error al verificar el pago', ['error' => $e->getMessage()]);
+            return redirect()->route('dashboard.solicitudes')->withErrors(['danger' => 'Hubo un error al procesar el pago.']);
+        }
     }
-    
 
     public function rejectRequest($petId)
     {
-        // Obtener el pago asociado a la mascota
-        $payment = Payment::where('pet_id', $petId)->firstOrFail();
+        try {
+            // Obtener el pago con eager loading
+            $payment = Payment::with('pet.user')->where('pet_id', $petId)->firstOrFail();
 
-        // Marcar el pago como rechazado
-        $payment->update(['status' => Payment::STATUS_REJECTED]);
+            // Marcar el pago como rechazado
+            $payment->update(['status' => Payment::STATUS_REJECTED]);
 
-        // Registrar el rechazo del pago
-        Log::info('Pago rechazado', [
-            'id' => $payment->id,
-            'mascota_id' => $payment->pet_id,
-            'payment_id' => $payment->payment_id,
-            'status' => $payment->status,
-        ]);
+            // Registrar el rechazo del pago
+            Log::info('Pago rechazado', [
+                'id' => $payment->id,
+                'mascota_id' => $payment->pet_id,
+                'payment_id' => $payment->payment_id,
+                'status' => $payment->status,
+            ]);
 
-        // Eliminar la mascota y el usuario
-        $payment->pet->delete();
-        $payment->pet->user->delete();
+            // Eliminar la mascota y el usuario
+            $payment->pet->delete();
+            $payment->pet->user->delete();
 
-        // Registrar la eliminación de la mascota y el usuario
-        Log::info('Mascota y usuario eliminados', [
-            'mascota_id' => $payment->pet_id,
-            'usuario_id' => $payment->pet->user_id,
-        ]);
+            // Registrar la eliminación de la mascota y el usuario
+            Log::info('Mascota y usuario eliminados', [
+                'mascota_id' => $payment->pet_id,
+                'usuario_id' => $payment->pet->user_id,
+            ]);
 
-        return redirect()->route('dashboard.solicitudes')->with('success', 'Solicitud rechazada y datos eliminados permanentemente.');
+            return redirect()->route('dashboard.solicitudes')->with('success', 'Solicitud rechazada y datos eliminados permanentemente.');
+        } catch (\Exception $e) {
+            Log::error('Error al rechazar la solicitud', ['error' => $e->getMessage()]);
+            return redirect()->route('dashboard.solicitudes')->withErrors(['danger' => 'Hubo un error al rechazar la solicitud.']);
+        }
     }
 }

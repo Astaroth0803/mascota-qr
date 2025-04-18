@@ -16,6 +16,9 @@ class RoleSeeder extends Seeder
             'rechazar solicitudes',
             'ver perfil',
             'ver_mascotas',
+            'acceso_admin', 
+            'registrar_mascotas',
+            'editar_mascotas',
         ];
 
         foreach ($permissions as $permission) {
@@ -27,12 +30,11 @@ class RoleSeeder extends Seeder
         $adminRole = Role::firstOrCreate(['name' => 'administrador']);
         $clienteQrRole = Role::firstOrCreate(['name' => 'cliente_qr']);
 
-        
         // Asignar todos los permisos al rol de administrador
         $adminRole->syncPermissions(Permission::all());
         $superAdminRole->syncPermissions(Permission::all());
 
         // Asignar permisos específicos al rol 'cliente_qr'
-        $clienteQrRole->syncPermissions(['ver perfil', 'ver_mascotas']);
+        $clienteQrRole->syncPermissions(['ver perfil', 'ver_mascotas', 'registrar_mascotas','editar_mascotas']);
     }
 }
