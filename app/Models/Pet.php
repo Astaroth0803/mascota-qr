@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\VaccinationRecord;
 
 class Pet extends Model
 {
@@ -14,7 +15,9 @@ class Pet extends Model
         'nombre',
         'especie',
         'raza',
-        'edad',
+        'otra_raza',
+        'edad_anios',
+        'edad_meses',
         'sexo',
         'nombre_owner',
         'apellido_owner',
@@ -22,6 +25,8 @@ class Pet extends Model
         'correo_owner',
         'id_pago_yappy',
         'vaccine_file',
+        'profile_image',
+        'user_id',
     ];
 
     // Relación con el modelo Payment (uno a uno)
@@ -29,8 +34,17 @@ class Pet extends Model
     {
         return $this->hasOne(Payment::class);  // Esto asocia un pago a cada mascota
     }
+
     public function user()
-{
-    return $this->belongsTo(User::class);
-}
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the vaccination records for the pet.
+     */
+    public function vaccinationRecords()
+    {
+        return $this->hasMany(VaccinationRecord::class);
+    }
 }

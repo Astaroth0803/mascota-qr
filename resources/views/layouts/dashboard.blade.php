@@ -17,8 +17,7 @@
         <header>
             <!-- Aquí puedes agregar un navbar si lo deseas -->
         </header>
-        <x-sidebar />
-        <main class="py-6">
+        <x-sidebar-menu" />
             @yield('content') <!-- Esta sección se sobrescribirá por las vistas hijas -->
             
         </main>

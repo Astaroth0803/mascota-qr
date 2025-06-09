@@ -8,6 +8,12 @@ use App\Services\PaymentService;
 use App\PaymentMethods\YappyPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Models\User;
+use App\Models\Solicitud;
+use Illuminate\Support\Facades\Storage;
+use App\Models\VaccinationRecord;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class PetController extends Controller
 {
@@ -16,6 +22,14 @@ class PetController extends Controller
     public function __construct(PaymentService $paymentService)
     {
         $this->paymentService = $paymentService;
+    }
+
+    /**
+     * Muestra el formulario para crear una nueva mascota
+     */
+    public function create()
+    {
+        return view('mascotas.create');
     }
 
     // Método para crear la mascota, mantenemos el mismo
@@ -85,18 +99,41 @@ class PetController extends Controller
     {
         // Verificar si el usuario tiene el permiso 'ver_mascotas'
         if (!Auth::user()->can('ver_mascotas')) {
-            return redirect()->route('dashboard')->with('error', 'No tienes permiso para ver tus mascotas.');
+            return redirect()->route('dashboard.cliente')->with('error', 'No tienes permiso para ver tus mascotas.');
         }
-    // Obtener el usuario actual
-    $user = Auth::user();
 
-    // Obtener las mascotas asociadas al cliente por ID y correo
-    $pets = Pet::with('payment')
-        ->where(function ($query) use ($user) {
-            $query->where('user_id', $user->id)
-                  ->orWhere('correo_owner', $user->email);
-        })
-        ->get();
+        $user = Auth::user();
+        $userId = $user->id;
+        $userEmail = $user->email;
+
+        // Obtener el timestamp de la última actualización de las mascotas del usuario.
+        // Obtenemos el valor y lo convertimos explícitamente a Carbon si no es nulo.
+        $lastUpdatedTimestampValue = Pet::where(function ($query) use ($userId, $userEmail) {
+                                        $query->where('user_id', $userId)
+                                              ->orWhere('correo_owner', $userEmail);
+                                    })
+                                    ->max('updated_at');
+
+        // Convertir a Carbon si no es nulo y luego obtener el timestamp
+        $lastUpdatedTimestamp = null;
+        if ($lastUpdatedTimestampValue) {
+            $lastUpdatedTimestamp = Carbon::parse($lastUpdatedTimestampValue)->timestamp;
+        }
+
+        // Generar una clave de caché
+        $cacheKey = 'user_pets:' . $userId . ($lastUpdatedTimestamp ? ':' . $lastUpdatedTimestamp : ':no_pets');
+
+        // Usar Cache::remember para obtener o almacenar los datos de las mascotas
+        $pets = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($userId, $userEmail) {
+            // Esta función solo se ejecuta si la caché no existe o ha expirado
+            return Pet::with(['payment', 'vaccinationRecords'])
+                ->where(function ($query) use ($userId, $userEmail) {
+                    $query->where('user_id', $userId)
+                          ->orWhere('correo_owner', $userEmail);
+                })
+                ->get();
+        });
+
         return view('dashboard.cliente', compact('pets'));
     }
 
@@ -104,9 +141,19 @@ class PetController extends Controller
     public function adminDashboard()
     {
         // Solo los administradores pueden acceder aquí
-        $pets = Pet::with('payment')->get(); // Aquí puedes mostrar todas las mascotas, o filtrar según sea necesario
+        $pets = Pet::with('payment')->get(); // Obtener todas las mascotas
 
-        return view('dashboard.administrador', compact('pets'));
+        // Obtener el total de usuarios
+        $userCount = User::count();
+
+        // Obtener el total de solicitudes pendientes
+        $solicitudCount = Solicitud::count();
+
+        // Datos de ejemplo para los gráficos (deberás reemplazarlos con datos reales)
+        $userDataForChart = [15, 18, 16, 19, 17, 20, 18]; // Ejemplo de actividad de usuarios por día/semana/mes
+        $petDistributionData = ['Perros' => 10, 'Gatos' => 5, 'Otros' => 3]; // Ejemplo de distribución por especie
+
+        return view('dashboard.administrador', compact('pets', 'userCount', 'solicitudCount', 'userDataForChart', 'petDistributionData'));
     }
 
     // Método para mostrar las solicitudes pendientes (solo para administradores)
@@ -143,6 +190,242 @@ class PetController extends Controller
     
         return view('dashboard.solicitudes', compact('pets', 'pendingCount'));
     }
-    
+
+    /**
+     * Muestra los detalles de una mascota específica (con caché ajustada).
+     */
+    public function show($id)
+    {
+        // Primero, obtener la mascota para tener su ID y updated_at
+        $pet = Pet::with('payment')->findOrFail($id);
+
+         // Opcional: Verificar que el usuario tenga permiso para ver esta mascota ANTES de cachear
+        if (!Auth::user()->can('ver_mascotas') ||
+            (Auth::user()->id !== $pet->user_id && Auth::user()->email !== $pet->correo_owner)) {
+            return redirect()->route('dashboard.cliente')
+                ->with('error', 'No tienes permiso para ver esta mascota.');
+        }
+
+        // Obtener el timestamp de updated_at de la mascota.
+        // Acceder al atributo y convertir a Carbon si no es nulo, luego obtener el timestamp.
+        // Aunque Eloquent suele castear updated_at a Carbon, esta es una capa adicional de seguridad.
+        $petUpdatedTimestamp = null;
+        if ($pet->updated_at) {
+            $petUpdatedTimestamp = Carbon::parse($pet->updated_at)->timestamp;
+        }
+
+        // Generar una clave de caché basada en el ID de la mascota y su timestamp de última actualización
+        $cacheKey = 'pet_details:' . $pet->id . ($petUpdatedTimestamp ? ':' . $petUpdatedTimestamp : ':no_timestamp');
+
+        // Usar Cache::remember para obtener o almacenar los datos de la mascota
+        $cachedPet = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($pet) {
+             // Recargar la mascota con todas las relaciones necesarias si no está en caché
+             // Usamos fresh() para asegurar que obtenemos la última versión de la DB si la caché expiró
+             $pet->load(['payment', 'vaccinationRecords']); // Añade aquí todas las relaciones que show necesita
+             return $pet;
+        });
+
+        // Usar $cachedPet en la vista
+        return view('mascotas.show', ['pet' => $cachedPet]);
+    }
+
+    /**
+     * Muestra el formulario para editar una mascota
+     */
+    public function edit($id)
+    {
+        $pet = Pet::findOrFail($id);
+        
+        // Verificar que el usuario tenga permiso para editar esta mascota
+        if (!Auth::user()->can('ver_mascotas') || 
+            (Auth::user()->id !== $pet->user_id && Auth::user()->email !== $pet->correo_owner)) {
+            return redirect()->route('dashboard.cliente')
+                ->with('error', 'No tienes permiso para editar esta mascota.');
+        }
+
+        return view('mascotas.edit', compact('pet'));
+    }
+
+    /**
+     * Actualiza los datos de una mascota
+     */
+    public function update(Request $request, Pet $pet)
+    {
+        // Verificar que el usuario tenga permiso para editar esta mascota
+        if (!Auth::user()->can('ver_mascotas') || 
+            (Auth::user()->id !== $pet->user_id && Auth::user()->email !== $pet->correo_owner)) {
+            return redirect()->route('dashboard.cliente')
+                ->with('error', 'No tienes permiso para editar esta mascota.');
+        }
+
+        $validated = $request->validate([
+            'nombre' => 'required|string|max:255',
+            'especie' => 'required|string|max:255',
+            'raza' => 'required|string|max:255',
+            'edad_anios' => 'required|integer|min:0|max:30',
+            'edad_meses' => 'required|integer|min:0|max:11',
+            'sexo' => 'required|string|in:Macho,Hembra',
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'vaccine_file' => 'nullable|file|mimes:pdf,doc,docx|max:10240'
+        ]);
+
+        // Manejar la imagen de perfil
+        if ($request->hasFile('profile_image')) {
+            // Eliminar la imagen anterior si existe
+            if ($pet->profile_image) {
+                Storage::delete($pet->profile_image);
+            }
+            // Guardar la nueva imagen
+            $path = $request->file('profile_image')->store('pets/profile-images', 'public');
+            $pet->profile_image = $path;
+        }
+
+        // Manejar el archivo de vacunas
+        if ($request->hasFile('vaccine_file')) {
+            // Eliminar el archivo anterior si existe
+            if ($pet->vaccine_file) {
+                Storage::delete($pet->vaccine_file);
+            }
+            // Guardar el nuevo archivo
+            $path = $request->file('vaccine_file')->store('pets/vaccine-files', 'public');
+            $pet->vaccine_file = $path;
+        }
+
+        // Actualizar los demás campos
+        $pet->update([
+            'nombre' => $validated['nombre'],
+            'especie' => $validated['especie'],
+            'raza' => $validated['raza'],
+            'edad_anios' => $validated['edad_anios'],
+            'edad_meses' => $validated['edad_meses'],
+            'sexo' => $validated['sexo']
+        ]);
+
+        return redirect()->route('dashboard.cliente.mascotas.show', $pet)
+            ->with('success', 'Mascota actualizada correctamente.');
+    }
+
+    public function updateImage(Request $request, Pet $pet)
+    {
+        $request->validate([
+            'profile_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
+        ]);
+
+        if ($request->hasFile('profile_image')) {
+            // Eliminar la imagen anterior si existe
+            if ($pet->profile_image) {
+                Storage::delete($pet->profile_image);
+            }
+
+            // Guardar la nueva imagen
+            $path = $request->file('profile_image')->store('pets/profile-images', 'public');
+            $pet->profile_image = $path;
+            $pet->save();
+        }
+
+        return redirect()->back()->with('success', 'Imagen de perfil actualizada correctamente');
+    }
+
+    /**
+     * Almacena una nueva mascota en la base de datos
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'nombre' => 'required|string|max:255',
+            'especie' => 'required|string|max:255',
+            'raza' => 'required|string|max:255',
+            'edad' => 'required|string|max:255',
+            'sexo' => 'required|string|in:Macho,Hembra',
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+        ]);
+
+        $user = Auth::user();
+
+        // Crear la mascota
+        $pet = new Pet();
+        $pet->nombre = $validated['nombre'];
+        $pet->especie = $validated['especie'];
+        $pet->raza = $validated['raza'];
+        $pet->edad = $validated['edad'];
+        $pet->sexo = $validated['sexo'];
+        $pet->user_id = $user->id;
+        $pet->nombre_owner = $user->name;
+        $pet->apellido_owner = $user->lastname ?? '';
+        $pet->correo_owner = $user->email;
+        $pet->telefono_owner = $user->phone ?? '';
+
+        // Manejar la imagen de perfil si se proporciona
+        if ($request->hasFile('profile_image')) {
+            $path = $request->file('profile_image')->store('pets/profile-images', 'public');
+            $pet->profile_image = $path;
+        }
+
+        $pet->save();
+
+        return redirect()->route('dashboard.cliente')
+            ->with('success', 'Mascota registrada correctamente.');
+    }
+
+    /**
+     * Muestra el historial de vacunación de una mascota específica.
+     */
+    public function showVaccinationHistory(Pet $pet)
+    {
+        // Opcional: Verificar que el usuario tenga permiso para ver esta mascota
+        if (!Auth::user()->can('ver_mascotas') ||
+            (Auth::user()->id !== $pet->user_id && Auth::user()->email !== $pet->correo_owner)) {
+            return redirect()->route('dashboard.cliente')
+                ->with('error', 'No tienes permiso para ver el historial de esta mascota.');
+        }
+
+        // Cargar los registros de vacunación relacionados
+        $pet->load('vaccinationRecords');
+
+        return view('mascotas.vaccination-history', compact('pet'));
+    }
+
+       /**
+     * Guarda un nuevo registro de vacunación para una mascota.
+     */
+    public function storeVaccinationRecord(Request $request, Pet $pet)
+    {
+        // Opcional: Verificar permisos
+        if (!Auth::user()->can('ver_mascotas') ||
+            (Auth::user()->id !== $pet->user_id && Auth::user()->email !== $pet->correo_owner)) {
+            return redirect()->route('dashboard.cliente')
+                ->with('error', 'No tienes permiso para agregar registros a esta mascota.');
+        }
+
+        $request->validate([
+            'vaccination_file' => 'required|file|mimes:pdf,doc,docx|max:10240', // Validar el archivo (max 10MB)
+            'vaccine_type' => 'nullable|string|max:255',
+            'vaccination_date' => 'nullable|date',
+            'notes' => 'nullable|string',
+        ]);
+
+        $filePath = null;
+        if ($request->hasFile('vaccination_file')) {
+            // Guardar el archivo en el disco configurado para Supabase (el disco 'public')
+            // La carpeta 'vaccination-certificates' es solo un ejemplo, puedes organizarlo como prefieras
+            $filePath = $request->file('vaccination_file')->store('pets/vaccination-certificates', 'public');
+        }
+
+        // Crear el nuevo registro en la base de datos
+        $record = new VaccinationRecord([
+            'pet_id' => $pet->id,
+            'file_path' => $filePath,
+            'vaccine_type' => $request->input('vaccine_type'),
+            'vaccination_date' => $request->input('vaccination_date'),
+            'notes' => $request->input('notes'),
+        ]);
+        $record->save();
+
+        return redirect()->route('dashboard.cliente.mascotas.vaccination-history', $pet)
+            ->with('success', 'Certificado de vacunación subido correctamente.');
+    }
 }
+
+
+
 

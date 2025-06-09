@@ -11,37 +11,43 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
 use App\Mail\UserCredentialsMail;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class SolicitudController extends Controller
 {
     // Listar solicitudes (para el administrador)
     public function index(Request $request)
-{
-    // Obtener los filtros de la solicitud
-    $search = $request->input('search');
+    {
+        // Obtener los filtros de la solicitud
+        $search = $request->input('search');
+        $cacheKey = 'solicitudes_' . md5($search);
 
+        // Intentar obtener del caché primero
+        $solicitudes = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($search) {
+            $query = Solicitud::query();
 
-    // Construir la consulta de Solicitudes con filtros
-    $solicitudes = Solicitud::query();
+            // Filtrar por búsqueda (nombre de mascota, nombre del dueño, o apellido del dueño)
+            if ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('nombre', 'like', '%' . $search . '%')
+                          ->orWhere('nombre_owner', 'like', '%' . $search . '%')
+                          ->orWhere('apellido_owner', 'like', '%' . $search . '%')
+                          ->orWhere('solicitudes.id_pago_yappy', 'like', '%' . $search . '%');
+                });
+            }
 
-    // Filtrar por búsqueda (nombre de mascota, nombre del dueño, o apellido del dueño)
-    if ($search) {
-        $solicitudes = $solicitudes->where(function ($query) use ($search) {
-            $query->where('nombre', 'like', '%' . $search . '%')
-                  ->orWhere('nombre_owner', 'like', '%' . $search . '%')
-                  ->orWhere('apellido_owner', 'like', '%' . $search . '%')
-                  ->orWhere('solicitudes.id_pago_yappy', 'like', '%' . $search . '%');
+            // Paginación de las solicitudes filtradas con eager loading
+            return $query->select('solicitudes.*')
+                        ->orderBy('created_at', 'desc')
+                        ->paginate(10);
         });
+
+        // Retornar la vista 'dashboard.solicitudes' con las solicitudes filtradas
+        return view('dashboard.solicitudes', compact('solicitudes'));
     }
 
-    // Paginación de las solicitudes filtradas
-    $solicitudes = $solicitudes->select('solicitudes.*')->paginate(10);
-
-    // Retornar la vista 'dashboard.solicitudes' con las solicitudes filtradas
-    return view('dashboard.solicitudes', compact('solicitudes'));
-}
-
-    
     public function reject($id)
     {
         $solicitud = Solicitud::findOrFail($id);
@@ -77,7 +83,7 @@ class SolicitudController extends Controller
                 ->with('error', 'No se pudo crear el usuario, verifique los datos.');
         }
     
-        // Asignar rol al usuario (si utilizas Spatie o similar)
+        // Asignar rol al usuario
         $user->assignRole('cliente_qr');
     
         // Verificar que el usuario se creó correctamente antes de crear la mascota
@@ -91,13 +97,14 @@ class SolicitudController extends Controller
             'nombre' => $solicitud->nombre,
             'especie' => $solicitud->especie,
             'raza' => $solicitud->raza,
-            'edad' => $solicitud->edad,
+            'edad_anios' => $solicitud->edad_anios,
+            'edad_meses' => $solicitud->edad_meses,
             'sexo' => $solicitud->sexo,
             'nombre_owner' => $solicitud->nombre_owner,
             'apellido_owner' => $solicitud->apellido_owner,
             'telefono_owner' => $solicitud->telefono_owner,
             'correo_owner' => $solicitud->correo_owner,
-            'user_id' => $user->id, // Aseguramos que user_id es el del usuario creado
+            'user_id' => $user->id,
         ]);
     
         // Si la creación de la mascota falla
@@ -106,8 +113,9 @@ class SolicitudController extends Controller
                 ->with('error', 'No se pudo crear la mascota.');
         }
     
-        // Enviar correo con credenciales (opcional)
-        Mail::to($solicitud->correo_owner)->send(new UserCredentialsMail($solicitud->correo_owner, $password));
+        // Enviar correo con credenciales usando cola
+        Mail::to($solicitud->correo_owner)
+            ->queue(new UserCredentialsMail($solicitud->correo_owner, $password));
     
         // Eliminar la solicitud
         $solicitud->delete();
@@ -124,21 +132,48 @@ class SolicitudController extends Controller
             'nombre' => 'required|string|max:255',
             'especie' => 'required|string|max:255',
             'raza' => 'required|string|max:255',
-            'edad' => 'required|integer',
+            'otra_raza' => 'nullable|string|max:255',
+            'edad_anios' => 'nullable|integer|min:0|max:30',
+            'edad_meses' => 'nullable|integer|min:0|max:11',
             'sexo' => 'required|string|max:10',
             'nombre_owner' => 'required|string|max:255',
             'apellido_owner' => 'required|string|max:255',
             'telefono_owner' => 'required|string|max:15',
             'correo_owner' => 'required|email',
             'id_pago_yappy' => 'required|string|max:255',
+        ], [
+            'nombre.required' => 'El nombre de la mascota es obligatorio.',
+            'especie.required' => 'La especie es obligatoria.',
+            'raza.required' => 'La raza es obligatoria.',
+            'edad_anios.max' => 'La edad en años no puede ser mayor a 30.',
+            'edad_meses.max' => 'La edad en meses no puede ser mayor a 11.',
+            'sexo.required' => 'El sexo es obligatorio.',
+            'nombre_owner.required' => 'El nombre del dueño es obligatorio.',
+            'apellido_owner.required' => 'El apellido del dueño es obligatorio.',
+            'telefono_owner.required' => 'El teléfono es obligatorio.',
+            'correo_owner.required' => 'El correo electrónico es obligatorio.',
+            'correo_owner.email' => 'El correo electrónico no es válido.',
+            'id_pago_yappy.required' => 'El ID de pago Yappy es obligatorio.',
         ]);
+
+        // Validar que al menos uno de los dos campos de edad esté presente
+        if (empty($validated['edad_anios']) && empty($validated['edad_meses'])) {
+            return back()->withErrors(['edad_anios' => 'Debe ingresar al menos la edad en años o meses.', 'edad_meses' => 'Debe ingresar al menos la edad en años o meses.'])->withInput();
+        }
+
+        // Si la raza es "Otro", usar el campo otra_raza
+        $razaFinal = $validated['raza'] === 'Otro' ? ($validated['otra_raza'] ?? '') : $validated['raza'];
+        if ($validated['raza'] === 'Otro' && empty($validated['otra_raza'])) {
+            return back()->withErrors(['otra_raza' => 'Debe especificar la raza si selecciona "Otro".'])->withInput();
+        }
 
         // Crear la solicitud
         $solicitud = Solicitud::create([
             'nombre' => $validated['nombre'],
             'especie' => $validated['especie'],
-            'raza' => $validated['raza'],
-            'edad' => $validated['edad'],
+            'raza' => $razaFinal,
+            'edad_anios' => $validated['edad_anios'] ?? null,
+            'edad_meses' => $validated['edad_meses'] ?? null,
             'sexo' => $validated['sexo'],
             'nombre_owner' => $validated['nombre_owner'],
             'apellido_owner' => $validated['apellido_owner'],
@@ -149,5 +184,12 @@ class SolicitudController extends Controller
 
         // Redirigir al usuario con un mensaje de éxito
         return redirect()->route('comprarealizada')->with('success', 'Solicitud recibida correctamente. Un administrador verificará el pago.');
+    }
+
+    // Método para mostrar los detalles de una solicitud
+    public function show($id)
+    {
+        $solicitud = Solicitud::findOrFail($id);
+        return view('dashboard.show-solicitud', compact('solicitud'));
     }
 }

@@ -16,6 +16,7 @@ class RoleSeeder extends Seeder
             'rechazar solicitudes',
             'ver perfil',
             'ver_mascotas',
+            'ver_solicitudes_mascotas_adicionales',
         ];
 
         foreach ($permissions as $permission) {

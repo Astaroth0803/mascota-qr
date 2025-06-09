@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\UserCredentialsMail;
+use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Cache;
 
 class UserController extends Controller
 {
@@ -41,27 +43,31 @@ class UserController extends Controller
     // Listar usuarios (para el administrador)
     public function index(Request $request)
     {
-        $usuarios = User::query();
-    
-        // Filtro por búsqueda en nombre o email
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $usuarios->where(function ($query) use ($search) {
-                $query->where('name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%");
-            });
-        }
-    
-        // Filtro por rol (usando la relación 'roles' de Spatie)
-        if ($request->filled('role')) {
-            $role = $request->role;
-            $usuarios->whereHas('roles', function ($query) use ($role) {
-                $query->where('name', $role);
-            });
-        }
-    
-        $usuarios = $usuarios->paginate(10);
-    
+        $search = $request->input('search');
+        $role = $request->input('role');
+        $cacheKey = 'usuarios_' . md5($search . $role);
+
+        $usuarios = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($search, $role) {
+            $query = User::query()
+                ->with(['roles', 'permissions']); // Eager loading de roles y permisos
+
+            if ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('name', 'like', "%{$search}%")
+                          ->orWhere('email', 'like', "%{$search}%");
+                });
+            }
+
+            if ($role) {
+                $query->whereHas('roles', function ($query) use ($role) {
+                    $query->where('name', $role);
+                });
+            }
+
+            return $query->orderBy('created_at', 'desc')
+                        ->paginate(10);
+        });
+
         return view('dashboard.usuarios', compact('usuarios'));
     }
     
@@ -98,6 +104,13 @@ class UserController extends Controller
         $solicitud->delete();
 
         return redirect()->route('dashboard.solicitudes')->with('success', 'Solicitud aceptada. Usuario y mascota creados.');
+    }
+
+    // Método para mostrar el formulario de creación de usuario
+    public function create()
+    {
+        $roles = Role::all(); // Obtener todos los roles
+        return view('dashboard.create-user', compact('roles')); // Pasar los roles a la vista
     }
 
     // Ver roles de un usuario

@@ -20,7 +20,8 @@ class Solicitud extends Model
         'nombre',
         'especie',
         'raza',
-        'edad',
+        'edad_anios',
+        'edad_meses',
         'sexo',
         'id_pago_yappy',
     ];

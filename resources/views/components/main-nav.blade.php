@@ -45,7 +45,9 @@
   const hamburgerButton = document.getElementById('hamburger-button');
   const navbarSticky = document.getElementById('navbar-sticky');
 
-  hamburgerButton.addEventListener('click', () => {
-    navbarSticky.classList.toggle('hidden');
-  });
+  if (hamburgerButton) {
+    hamburgerButton.addEventListener('click', () => {
+      navbarSticky.classList.toggle('hidden');
+    });
+  }
 </script>

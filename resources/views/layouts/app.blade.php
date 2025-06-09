@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
-        <title>{{ config('app.name', default: 'Buky dashboard') }}</title>
+        <title>@auth{{ Auth::user()->hasAnyRole(['administrador', 'super_admin']) ? 'Buky World | Admin' : (Auth::user()->hasRole('cliente_qr') ? 'Buky World | Cliente' : 'Buky World') }}@else{{ config('app.name', default: 'Buky World') }}@endauth</title>
         @vite(['resources/css/main.css'])
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -34,5 +34,8 @@
             </main>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/flowbite@3.0.0/dist/flowbite.min.js"></script>
+
+        {{-- Required for pushed scripts from components --}}
+        @stack('scripts')
     </body>
 </html>
