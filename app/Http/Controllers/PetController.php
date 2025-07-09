@@ -92,7 +92,7 @@ class PetController extends Controller
         ]);
 
         return $pet;
-    } 
+    }
 
     // Método para el dashboard del cliente
     public function dashboardCliente()
@@ -134,7 +134,17 @@ class PetController extends Controller
                 ->get();
         });
 
-        return view('dashboard.cliente', compact('pets'));
+        // Inicializar estadísticas
+        $statistics = [
+            'total_pets' => $pets->count(),
+            'pending_vaccinations' => VaccinationRecord::whereHas('pet', function ($query) use ($userId) {
+                $query->where('user_id', $userId);
+            })->count(),
+            'upcoming_appointments' => [],
+            'recent_activities' => []
+        ];
+
+        return view('dashboard.cliente', compact('pets', 'statistics'));
     }
 
     // Método para el dashboard del administrador
@@ -161,7 +171,7 @@ class PetController extends Controller
     {
         // Obtener las solicitudes con filtros
         $query = Pet::with('payment');
-    
+
         // Filtrar por nombre de mascota o dueño
         if ($request->has('search')) {
             $search = $request->input('search');
@@ -171,7 +181,7 @@ class PetController extends Controller
                   ->orWhere('apellido_owner', 'like', "%{$search}%");
             });
         }
-    
+
         // Filtrar por estado del pago
         if ($request->has('status')) {
             $status = $request->input('status');
@@ -179,15 +189,15 @@ class PetController extends Controller
                 $q->where('status', $status);
             });
         }
-    
+
         // Obtener las solicitudes pendientes
         $pendingCount = Pet::whereHas('payment', function ($query) {
             $query->where('status', 'pending');
         })->count();
-    
+
         // Paginar los resultados
         $pets = $query->paginate(10);
-    
+
         return view('dashboard.solicitudes', compact('pets', 'pendingCount'));
     }
 
@@ -235,9 +245,9 @@ class PetController extends Controller
     public function edit($id)
     {
         $pet = Pet::findOrFail($id);
-        
+
         // Verificar que el usuario tenga permiso para editar esta mascota
-        if (!Auth::user()->can('ver_mascotas') || 
+        if (!Auth::user()->can('ver_mascotas') ||
             (Auth::user()->id !== $pet->user_id && Auth::user()->email !== $pet->correo_owner)) {
             return redirect()->route('dashboard.cliente')
                 ->with('error', 'No tienes permiso para editar esta mascota.');
@@ -252,7 +262,7 @@ class PetController extends Controller
     public function update(Request $request, Pet $pet)
     {
         // Verificar que el usuario tenga permiso para editar esta mascota
-        if (!Auth::user()->can('ver_mascotas') || 
+        if (!Auth::user()->can('ver_mascotas') ||
             (Auth::user()->id !== $pet->user_id && Auth::user()->email !== $pet->correo_owner)) {
             return redirect()->route('dashboard.cliente')
                 ->with('error', 'No tienes permiso para editar esta mascota.');
@@ -379,15 +389,80 @@ class PetController extends Controller
                 ->with('error', 'No tienes permiso para ver el historial de esta mascota.');
         }
 
-        // Cargar los registros de vacunación relacionados
-        $pet->load('vaccinationRecords');
+        // Limpiar la caché para asegurar que vemos los datos más recientes
+        $cacheKey = 'pet_records:' . $pet->id;
+        Cache::forget($cacheKey);
 
-        return view('mascotas.vaccination-history', compact('pet'));
+        // Recargar la mascota con los registros de vacunación relacionados frescos
+        $pet = $pet->fresh(['vaccinationRecords' => function($query) {
+            $query->orderBy('created_at', 'desc'); // Más recientes primero
+        }]);
+
+        // Para depuración - comenta en producción
+        \Illuminate\Support\Facades\Log::info('Registros cargados para mascota ID ' . $pet->id, [
+            'total_records' => $pet->vaccinationRecords->count(),
+            'records_data' => $pet->vaccinationRecords->toArray()
+        ]);
+
+        // Definir los tipos de registro para el formulario
+        $recordTypes = [
+            'vacuna' => 'Vacunación',
+            'checkeo' => 'Cita de control',
+            'peluqueria' => 'Peluquería/Estética',
+            'operacion' => 'Operación/Cirugía'
+        ];
+
+        return view('mascotas.vaccination-history', compact('pet', 'recordTypes'));
     }
 
        /**
      * Guarda un nuevo registro de vacunación para una mascota.
      */
+    /**
+     * Método de depuración para verificar registros directamente en la base de datos
+     */
+    public function debugRecords(Pet $pet)
+    {
+        // Verificar permisos
+        if (!Auth::user()->can('ver_mascotas') ||
+            (Auth::user()->id !== $pet->user_id && Auth::user()->email !== $pet->correo_owner)) {
+            return redirect()->route('dashboard.cliente')
+                ->with('error', 'No tienes permiso para ver esta información.');
+        }
+
+        // Obtener registros directamente con SQL query builder
+        $sqlRecords = \DB::table('vaccination_records')
+            ->where('pet_id', $pet->id)
+            ->get();
+
+        // Registrar información para depuración
+        Log::info('Depuración de registros médicos', [
+            'pet_id' => $pet->id,
+            'sql_records_count' => $sqlRecords->count(),
+            'eloquent_records_count' => $pet->vaccinationRecords()->count()
+        ]);
+
+        return view('mascotas.debug-records', compact('pet', 'sqlRecords'));
+    }
+
+    /**
+     * Método para refrescar la caché y relaciones
+     */
+    public function debugRefreshCache(Pet $pet)
+    {
+        // Limpiar todas las cachés relacionadas
+        Cache::flush();
+
+        // Forzar una recarga del modelo y sus relaciones
+        $pet = Pet::with('vaccinationRecords')->findOrFail($pet->id);
+
+        // Registrar en el log
+        Log::info('Caché limpiada para mascota', ['pet_id' => $pet->id]);
+
+        return redirect()->route('dashboard.cliente.mascotas.debug-records', $pet)
+            ->with('success', 'Caché limpiada correctamente');
+    }
+
     public function storeVaccinationRecord(Request $request, Pet $pet)
     {
         // Opcional: Verificar permisos
@@ -397,32 +472,178 @@ class PetController extends Controller
                 ->with('error', 'No tienes permiso para agregar registros a esta mascota.');
         }
 
-        $request->validate([
-            'vaccination_file' => 'required|file|mimes:pdf,doc,docx|max:10240', // Validar el archivo (max 10MB)
-            'vaccine_type' => 'nullable|string|max:255',
-            'vaccination_date' => 'nullable|date',
-            'notes' => 'nullable|string',
-        ]);
+        // Validación común para todos los tipos de registros
+        $commonRules = [
+            'record_type' => 'required|string|in:vacuna,checkeo,peluqueria,operacion',
+            'date' => 'required|date',
+            'time' => 'required|date_format:H:i',
+            'vet_name' => 'nullable|string|max:255',
+            'location' => 'nullable|string|max:255',
+            'observations' => 'nullable|string',
+            'document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240'
+        ];
 
-        $filePath = null;
-        if ($request->hasFile('vaccination_file')) {
-            // Guardar el archivo en el disco configurado para Supabase (el disco 'public')
-            // La carpeta 'vaccination-certificates' es solo un ejemplo, puedes organizarlo como prefieras
-            $filePath = $request->file('vaccination_file')->store('pets/vaccination-certificates', 'public');
+        // Reglas específicas según el tipo de registro
+        $specificRules = [];
+        switch ($request->input('record_type')) {
+            case 'vacuna':
+                $specificRules = [
+                    'vaccine_name' => 'required|string|max:255',
+                    'next_date' => 'nullable|date|after:date',
+                ];
+                break;
+
+            case 'checkeo':
+                $specificRules = [
+                    'diagnosis' => 'nullable|string',
+                    'treatment' => 'nullable|string',
+                    'next_date' => 'nullable|date|after:date',
+                ];
+                break;
+
+            case 'operacion':
+                $specificRules = [
+                    'diagnosis' => 'required|string',
+                    'treatment' => 'required|string',
+                    'next_date' => 'nullable|date|after:date',
+                ];
+                break;
+
+            case 'peluqueria':
+                $specificRules = [
+                    'observations' => 'required|string',
+                    'next_date' => 'nullable|date|after:date',
+                ];
+                break;
         }
 
-        // Crear el nuevo registro en la base de datos
-        $record = new VaccinationRecord([
-            'pet_id' => $pet->id,
-            'file_path' => $filePath,
-            'vaccine_type' => $request->input('vaccine_type'),
-            'vaccination_date' => $request->input('vaccination_date'),
-            'notes' => $request->input('notes'),
-        ]);
-        $record->save();
+        // Combinar y validar
+        $validated = $request->validate(array_merge($commonRules, $specificRules));
 
-        return redirect()->route('dashboard.cliente.mascotas.vaccination-history', $pet)
-            ->with('success', 'Certificado de vacunación subido correctamente.');
+        // Crear el registro con los valores de manera explícita para evitar errores de columnas
+        $record = new VaccinationRecord();
+        $record->pet_id = $pet->id;
+        $record->record_type = $validated['record_type'];
+
+        // Manejar la fecha y hora
+        $record->date = Carbon::parse($validated['date']);
+        $record->time = $validated['time'];
+
+        // Registrar la operación para depuración
+        Log::info('Creando registro médico', [
+            'pet_id' => $pet->id,
+            'record_type' => $validated['record_type'],
+            'date' => $validated['date'],
+            'time' => $validated['time']
+        ]);
+
+        // Campos opcionales
+        if (isset($validated['vet_name'])) {
+            $record->vet_name = $validated['vet_name'];
+        }
+        if (isset($validated['location'])) {
+            $record->location = $validated['location'];
+        }
+        if (isset($validated['observations'])) {
+            $record->observations = $validated['observations'];
+        }
+        if (isset($validated['next_date']) && !empty($validated['next_date'])) {
+            $record->next_date = Carbon::parse($validated['next_date']);
+            Log::info('Estableciendo fecha próxima', ['next_date' => $validated['next_date']]);
+        }
+
+        // Campos específicos por tipo
+        if ($validated['record_type'] == 'vacuna' && isset($validated['vaccine_name'])) {
+            $record->vaccine_name = $validated['vaccine_name'];
+        }
+        if (in_array($validated['record_type'], ['checkeo', 'operacion']) && isset($validated['diagnosis'])) {
+            $record->diagnosis = $validated['diagnosis'];
+        }
+        if (in_array($validated['record_type'], ['checkeo', 'operacion']) && isset($validated['treatment'])) {
+            $record->treatment = $validated['treatment'];
+        }
+
+        // Guardar el documento si se proporciona
+        if ($request->hasFile('document')) {
+            $path = $request->file('document')->store('pets/records', 'public');
+            $record->document_path = $path;
+        }
+
+        try {
+            // Insertar directamente en la base de datos para evitar problemas de Eloquent
+            $data = [
+                'pet_id' => $pet->id,
+                'record_type' => $validated['record_type'],
+                'date' => $validated['date'],
+                'time' => $validated['time'],
+                'created_at' => now(),
+                'updated_at' => now()
+            ];
+
+            // Agregar campos opcionales si existen
+            if (isset($validated['vet_name'])) $data['vet_name'] = $validated['vet_name'];
+            if (isset($validated['location'])) $data['location'] = $validated['location'];
+            if (isset($validated['observations'])) $data['observations'] = $validated['observations'];
+            if (isset($validated['next_date'])) $data['next_date'] = $validated['next_date'];
+
+            // Campos específicos por tipo
+            if ($validated['record_type'] == 'vacuna' && isset($validated['vaccine_name'])) {
+                $data['vaccine_name'] = $validated['vaccine_name'];
+            }
+            if (in_array($validated['record_type'], ['checkeo', 'operacion'])) {
+                if (isset($validated['diagnosis'])) $data['diagnosis'] = $validated['diagnosis'];
+                if (isset($validated['treatment'])) $data['treatment'] = $validated['treatment'];
+            }
+
+            // Guardar documento si existe
+            if ($request->hasFile('document')) {
+                $path = $request->file('document')->store('pets/records', 'public');
+                $data['document_path'] = $path;
+            }
+
+            // Insertar directamente en la base de datos
+            $recordId = \DB::table('vaccination_records')->insertGetId($data);
+
+            Log::info('Registro médico insertado directamente', [
+                'record_id' => $recordId,
+                'data' => $data
+            ]);
+
+            // Verificar que el registro se haya guardado correctamente
+            $savedRecord = \DB::table('vaccination_records')->where('id', $recordId)->first();
+            if ($savedRecord) {
+                Log::info('Verificación: Registro encontrado en base de datos', [
+                    'record_id' => $recordId,
+                    'record_data' => (array)$savedRecord
+                ]);
+            } else {
+                Log::error('Verificación: Registro NO encontrado en base de datos a pesar de ID exitoso', [
+                    'record_id' => $recordId
+                ]);
+            }
+
+            // Limpiar cualquier caché relacionada con esta mascota
+            Cache::flush(); // Limpiar toda la caché para estar seguros
+
+            // Actualizar el timestamp de la mascota para invalidar cachés basadas en él
+            $pet->touch();
+
+        } catch (\Exception $e) {
+            // Registrar el error con detalles completos
+            Log::error('Error al guardar registro médico', [
+                'pet_id' => $pet->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'sql_state' => $e->getCode(),
+                'data' => $validated
+            ]);
+
+            return redirect()->back()->with('error', 'Error al guardar el registro: ' . $e->getMessage());
+        }
+
+        // Redirigir a la página de depuración para verificar inmediatamente
+        return redirect()->route('dashboard.cliente.mascotas.debug-records', $pet)
+            ->with('success', 'Registro médico agregado. Verifique los resultados en esta página de diagnóstico.');
     }
 }
 

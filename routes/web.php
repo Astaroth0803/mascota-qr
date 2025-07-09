@@ -57,6 +57,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/mascotas/{pet}/vaccination-history', [PetController::class, 'showVaccinationHistory'])->name('mascotas.vaccination-history');
         Route::post('/mascotas/{pet}/vaccination-records', [PetController::class, 'storeVaccinationRecord'])->name('mascotas.vaccination-records.store');
         Route::post('/solicitudes/store-pet', [SolicitudController::class, 'storePetRequest'])->name('solicitudes.store-pet');
+
+        // Rutas para depuración
+        Route::get('/mascotas/{pet}/debug-records', [PetController::class, 'debugRecords'])->name('mascotas.debug-records');
+        Route::get('/mascotas/{pet}/debug-refresh', [PetController::class, 'debugRefreshCache'])->name('mascotas.debug-refresh');
     });
 
     // Rutas del dashboard para administradores (solo para administradores y super_admins)
@@ -80,7 +84,7 @@ Route::middleware('auth')->group(function () {
 
             // Reset password routes
             Route::post('{id}/reset-password', [UserController::class, 'resetPassword'])->name('usuarios.resetPassword');
-            Route::get('{id}/edit-password', [UserController::class, 'editPassword'])->name('usuarios.editPassword');        
+            Route::get('{id}/edit-password', [UserController::class, 'editPassword'])->name('usuarios.editPassword');
             Route::patch('{id}/edit-password', [UserController::class, 'updatePassword'])->name('usuarios.updatePassword');
 
             // Role and permissions routes
@@ -101,4 +105,8 @@ Route::middleware('auth')->group(function () {
         Route::delete('/', [ProfileController::class, 'destroy'])->name('profile.destroy');
     });
 
+    // Vista mejorada del dashboard del cliente
+    Route::get('/dashboard/cliente/nuevo', [\App\Http\Controllers\Client\DashboardController::class, 'index'])
+        ->middleware('role:cliente_qr') // Aplicamos el middleware de rol
+        ->name('dashboard.cliente.nuevo');
 });

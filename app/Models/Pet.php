@@ -45,6 +45,21 @@ class Pet extends Model
      */
     public function vaccinationRecords()
     {
-        return $this->hasMany(VaccinationRecord::class);
+        return $this->hasMany(VaccinationRecord::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Sobrescribe el método load para forzar un reseteo de relaciones cuando
+     * se cargan los registros de vacunación
+     */
+    public function load($relations)
+    {
+        // Si estamos cargando vaccinationRecords, forzar una limpieza de la caché de relaciones
+        if (is_string($relations) && $relations === 'vaccinationRecords' || 
+            (is_array($relations) && in_array('vaccinationRecords', $relations))) {
+            $this->unsetRelation('vaccinationRecords');
+        }
+
+        return parent::load($relations);
     }
 }

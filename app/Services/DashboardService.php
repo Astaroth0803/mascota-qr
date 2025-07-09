@@ -77,11 +77,22 @@ class DashboardService
 
     protected function getPendingVaccinations($userId)
     {
+        // Como no existe la columna next_vaccination_date, usamos una alternativa
+        // o devolvemos un valor por defecto hasta que se implemente correctamente
         return VaccinationRecord::whereHas('pet', function ($query) use ($userId) {
             $query->where('user_id', $userId);
         })
-        ->where('next_vaccination_date', '<=', now()->addMonths(1))
         ->count();
+
+        /*
+        // Nota: Cuando la estructura de la base de datos esté lista, puedes descomentar
+        // y adaptar esto según la estructura real de tu tabla vaccination_records
+        return VaccinationRecord::whereHas('pet', function ($query) use ($userId) {
+            $query->where('user_id', $userId);
+        })
+        ->where('fecha_proxima', '<=', now()->addMonths(1))  // Ajusta el nombre de la columna
+        ->count();
+        */
     }
 
     protected function getUpcomingAppointments($userId)

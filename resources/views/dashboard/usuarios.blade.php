@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-6">
+    <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Gestión de Usuarios') }}
             </h2>
             <a href="{{ route('usuarios.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-sm inline-flex items-center justify-center">

@@ -13,13 +13,17 @@ class DashboardController extends Controller
 
     public function __construct(DashboardService $dashboardService)
     {
-        $this->middleware('auth');
+        // En Laravel 11 no usamos middleware en el controlador
+        // sino en las rutas
         $this->dashboardService = $dashboardService;
     }
 
     public function index()
     {
-        $this->authorize('viewDashboard', Auth::user());
+        // Usar Spatie para verificar permisos
+        if (!auth()->user()->can('ver_mascotas')) {
+            abort(403, 'No tienes permiso para ver esta página');
+        }
 
         $pets = $this->dashboardService->getUserPets(
             Auth::id(),
@@ -28,9 +32,16 @@ class DashboardController extends Controller
 
         $statistics = $this->dashboardService->getUserStatistics(Auth::id());
 
-        return view('dashboard.cliente', [
-            'pets' => $pets,
-            'statistics' => $statistics
-        ]);
+        // Asegurarnos de que statistics siempre tenga un formato válido
+        if (!is_array($statistics)) {
+            $statistics = [
+                'total_pets' => $pets->count(),
+                'pending_vaccinations' => 0,
+                'upcoming_appointments' => [],
+                'recent_activities' => []
+            ];
+        }
+
+        return view('dashboard.cliente', compact('pets', 'statistics'));
     }
 }

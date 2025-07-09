@@ -1,0 +1,119 @@
+{{-- Incluir el sidebar funcional --}}
+    @props(['active' => 'dashboard', 'pendingRequests' => 0])
+
+    {{-- Navbar para móviles --}}
+    <nav class="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+        <div class="flex items-center justify-between px-4 py-3">
+            <div class="flex items-center space-x-3">
+                <img src="{{ asset('img/logo3.png') }}" alt="Logo" class="h-8 w-8 rounded-lg">
+                <span class="text-lg font-bold text-gray-800">Buky World</span>
+            </div>
+            <form method="POST" action="{{ route('logout') }}" class="flex-shrink-0">
+                @csrf
+                <button type="submit" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors duration-200">
+                    <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span class="hidden sm:inline">Cerrar sesión</span>
+                    <span class="sm:hidden">Salir</span>
+                </button>
+            </form>
+        </div>
+    </nav>
+
+    {{-- Sidebar para desktop --}}
+    <aside class="hidden lg:block fixed top-0 left-0 z-40 h-screen w-64 bg-white border-r border-gray-200 shadow-lg">
+        <!-- Logo -->
+        <div class="flex h-16 items-center border-b border-gray-200 px-4 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div class="flex items-center space-x-3">
+                <img src="{{ asset('img/logo3.png') }}" alt="Logo" class="h-8 w-8 rounded-lg">
+                <span class="text-lg sm:text-xl font-bold text-gray-800">Buky World</span>
+            </div>
+        </div>
+
+        <!-- Enlaces principales -->
+        <div class="flex flex-col h-full bg-gray-50">
+            <div class="flex-1 py-4 overflow-y-auto">
+                <nav class="space-y-2 px-4">
+                    <!-- Dashboard -->
+                    <a href="{{ route('dashboard') }}"
+                        @class([
+                             'group flex items-center rounded-lg px-3 sm:px-4 py-3 text-sm font-medium transition-all duration-200',
+                             'bg-blue-100 text-blue-700 border-l-4 border-blue-500 shadow-sm' => $active === 'dashboard',
+                             'text-gray-600 hover:bg-blue-50 hover:text-blue-600 hover:border-l-4 hover:border-blue-300' => $active !== 'dashboard'
+                        ])>
+                        <svg class="mr-3 h-4 w-4 sm:h-5 sm:w-5"
+                             @class([
+                                 'text-blue-600' => $active === 'dashboard',
+                                 'text-gray-500 group-hover:text-blue-500' => $active !== 'dashboard'
+                             ])
+                             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        <span class="truncate">Dashboard</span>
+                    </a>
+
+                    @if(auth()->user()->hasRole('administrador') || auth()->user()->hasRole('super_admin'))
+                        <!-- Menú desplegable de Usuarios -->
+                        <div class="space-y-2">
+                            <div class="group flex w-full items-center rounded-lg px-3 sm:px-4 py-3 text-sm font-medium text-gray-600 hover:bg-green-50 hover:text-green-600 hover:border-l-4 hover:border-green-300 transition-all duration-200">
+                                <svg class="mr-3 h-4 w-4 sm:h-5 sm:w-5 text-gray-500 group-hover:text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                </svg>
+                                <span class="flex-1 truncate">Usuarios</span>
+                            </div>
+                            <div class="space-y-1 pl-8 sm:pl-11">
+                                <a href="{{ route('dashboard.usuarios') }}"
+                                   class="group flex items-center rounded-lg px-3 sm:px-4 py-2 text-sm font-medium text-gray-500 hover:bg-green-50 hover:text-green-600 transition-colors duration-200">
+                                    <span class="truncate">Lista de Usuarios</span>
+                                </a>
+                                <a href="{{ route('usuarios.create') }}"
+                                   class="group flex items-center rounded-lg px-3 sm:px-4 py-2 text-sm font-medium text-gray-500 hover:bg-green-50 hover:text-green-600 transition-colors duration-200">
+                                    <span class="truncate">Nuevo Usuario</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Solicitudes -->
+                        <a href="{{ route('dashboard.solicitudes') }}"
+                            @class([
+                                 'group flex items-center rounded-lg px-3 sm:px-4 py-3 text-sm font-medium transition-all duration-200',
+                                 'bg-orange-100 text-orange-700 border-l-4 border-orange-500 shadow-sm' => $active === 'solicitudes',
+                                 'text-gray-600 hover:bg-orange-50 hover:text-orange-600 hover:border-l-4 hover:border-orange-300' => $active !== 'solicitudes'
+                            ])>
+                            <svg class="mr-3 h-4 w-4 sm:h-5 sm:w-5"
+                                 @class([
+                                     'text-orange-600' => $active === 'solicitudes',
+                                     'text-gray-500 group-hover:text-orange-500' => $active !== 'solicitudes'
+                                 ])
+                                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            <span class="truncate">Solicitudes</span>
+                            @if($pendingRequests > 0)
+                                <span class="ml-auto inline-flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-xs font-medium text-white shadow-sm">
+                                    {{ $pendingRequests }}
+                                </span>
+                            @endif
+                        </a>
+                    @endif
+                </nav>
+            </div>
+            
+            <!-- Botón de logout fijo en la parte inferior -->
+            <div class="px-4 py-3 border-t border-gray-200 bg-gray-50">
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="w-full flex items-center px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors duration-200">
+                        <svg class="mr-3 h-4 w-4 sm:h-5 sm:w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        <span class="truncate">Cerrar sesión</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </aside>

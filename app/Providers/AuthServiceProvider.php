@@ -5,9 +5,7 @@ namespace App\Providers;
 // use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use App\Models\Pet;
-use App\Models\User;
 use App\Policies\PetPolicy;
-use App\Policies\UserPolicy;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -18,5 +16,4 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         Pet::class => PetPolicy::class,
-        User::class => UserPolicy::class,
     ];

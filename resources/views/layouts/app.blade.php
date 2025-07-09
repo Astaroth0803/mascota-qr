@@ -29,6 +29,7 @@
                 </header>
             @endisset
             <!-- Page Content -->
+            <x-sidebar-menu />
             <main>
                 {{ $slot }}
             </main>

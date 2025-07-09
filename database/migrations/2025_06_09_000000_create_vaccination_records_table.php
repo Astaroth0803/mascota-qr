@@ -11,34 +11,70 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Verificar si la tabla ya existe, si es así, la eliminamos para recrearla
         if (Schema::hasTable('vaccination_records')) {
-            Schema::drop('vaccination_records');
+            Schema::table('vaccination_records', function (Blueprint $table) {
+                if (!Schema::hasColumn('vaccination_records', 'record_type')) {
+                    $table->string('record_type')->default('vacuna');
+                }
+
+                if (!Schema::hasColumn('vaccination_records', 'vaccine_name')) {
+                    $table->string('vaccine_name')->nullable();
+                }
+
+                if (!Schema::hasColumn('vaccination_records', 'date')) {
+                    $table->date('date')->nullable();
+                }
+
+                if (!Schema::hasColumn('vaccination_records', 'time')) {
+                    $table->time('time')->nullable();
+                }
+
+                if (!Schema::hasColumn('vaccination_records', 'document_path')) {
+                    $table->string('document_path')->nullable();
+                }
+
+                if (!Schema::hasColumn('vaccination_records', 'next_date')) {
+                    $table->date('next_date')->nullable();
+                }
+
+                if (!Schema::hasColumn('vaccination_records', 'diagnosis')) {
+                    $table->text('diagnosis')->nullable();
+                }
+
+                if (!Schema::hasColumn('vaccination_records', 'treatment')) {
+                    $table->text('treatment')->nullable();
+                }
+
+                if (!Schema::hasColumn('vaccination_records', 'observations')) {
+                    $table->text('observations')->nullable();
+                }
+
+                if (!Schema::hasColumn('vaccination_records', 'vet_name')) {
+                    $table->string('vet_name')->nullable();
+                }
+
+                if (!Schema::hasColumn('vaccination_records', 'location')) {
+                    $table->string('location')->nullable();
+                }
+
+                // Compatibilidad con campos antiguos
+                if (!Schema::hasColumn('vaccination_records', 'file_path')) {
+                    $table->string('file_path')->nullable();
+                }
+
+                if (!Schema::hasColumn('vaccination_records', 'vaccination_date')) {
+                    $table->date('vaccination_date')->nullable();
+                }
+
+                if (!Schema::hasColumn('vaccination_records', 'vaccine_type')) {
+                    $table->string('vaccine_type')->nullable();
+                }
+
+                if (!Schema::hasColumn('vaccination_records', 'notes')) {
+                    $table->text('notes')->nullable();
+                }
+            });
         }
-
-        Schema::create('vaccination_records', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('pet_id')->constrained()->onDelete('cascade');
-            $table->string('record_type')->default('vacuna');
-            $table->string('vaccine_name')->nullable();
-            $table->date('date')->nullable();
-            $table->time('time')->nullable();
-            $table->string('document_path')->nullable();
-            $table->date('next_date')->nullable();
-            $table->text('diagnosis')->nullable();
-            $table->text('treatment')->nullable();
-            $table->text('observations')->nullable();
-            $table->string('vet_name')->nullable();
-            $table->string('location')->nullable();
-
-            // Campos antiguos para compatibilidad
-            $table->string('file_path')->nullable();
-            $table->date('vaccination_date')->nullable();
-            $table->string('vaccine_type')->nullable();
-            $table->text('notes')->nullable();
-
-            $table->timestamps();
-        });
     }
 
     /**
@@ -46,6 +82,26 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('vaccination_records');
+        if (Schema::hasTable('vaccination_records')) {
+            Schema::table('vaccination_records', function (Blueprint $table) {
+                $table->dropColumn([
+                    'record_type',
+                    'vaccine_name',
+                    'date',
+                    'time',
+                    'document_path',
+                    'next_date',
+                    'diagnosis',
+                    'treatment',
+                    'observations',
+                    'vet_name',
+                    'location',
+                    'file_path',
+                    'vaccination_date',
+                    'vaccine_type',
+                    'notes',
+                ]);
+            });
+        }
     }
 };

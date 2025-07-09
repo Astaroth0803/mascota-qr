@@ -14,7 +14,7 @@
     @if(isset($appointment['pet_id']))
         <div class="mt-2 text-sm">
             <span class="font-medium text-gray-500">Mascota:</span>
-            <a href="{{ route('mascotas.show', $appointment['pet_id']) }}" class="ml-1 text-blue-600 hover:text-blue-800">
+            <a href="{{ route('dashboard.cliente.mascotas.show', $appointment['pet_id']) }}" class="ml-1 text-blue-600 hover:text-blue-800">
                 {{ $appointment['pet_name'] }}
             </a>
         </div>
