@@ -106,35 +106,13 @@ class PetController extends Controller
         $userId = $user->id;
         $userEmail = $user->email;
 
-        // Obtener el timestamp de la última actualización de las mascotas del usuario.
-        // Obtenemos el valor y lo convertimos explícitamente a Carbon si no es nulo.
-        $lastUpdatedTimestampValue = Pet::where(function ($query) use ($userId, $userEmail) {
-                                        $query->where('user_id', $userId)
-                                              ->orWhere('correo_owner', $userEmail);
-                                    })
-                                    ->max('updated_at');
+        $pets = Pet::with(['payment', 'vaccinationRecords'])
+            ->where(function ($query) use ($userId, $userEmail) {
+                $query->where('user_id', $userId)
+                      ->orWhere('correo_owner', $userEmail);
+            })
+            ->get();
 
-        // Convertir a Carbon si no es nulo y luego obtener el timestamp
-        $lastUpdatedTimestamp = null;
-        if ($lastUpdatedTimestampValue) {
-            $lastUpdatedTimestamp = Carbon::parse($lastUpdatedTimestampValue)->timestamp;
-        }
-
-        // Generar una clave de caché
-        $cacheKey = 'user_pets:' . $userId . ($lastUpdatedTimestamp ? ':' . $lastUpdatedTimestamp : ':no_pets');
-
-        // Usar Cache::remember para obtener o almacenar los datos de las mascotas
-        $pets = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($userId, $userEmail) {
-            // Esta función solo se ejecuta si la caché no existe o ha expirado
-            return Pet::with(['payment', 'vaccinationRecords'])
-                ->where(function ($query) use ($userId, $userEmail) {
-                    $query->where('user_id', $userId)
-                          ->orWhere('correo_owner', $userEmail);
-                })
-                ->get();
-        });
-
-        // Inicializar estadísticas
         $statistics = [
             'total_pets' => $pets->count(),
             'pending_vaccinations' => VaccinationRecord::whereHas('pet', function ($query) use ($userId) {

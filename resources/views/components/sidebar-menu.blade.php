@@ -2,22 +2,46 @@
     @props(['active' => 'dashboard', 'pendingRequests' => 0])
 
     {{-- Navbar para móviles --}}
-    <nav class="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+    <nav x-data="{ open: false }" class="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
         <div class="flex items-center justify-between px-4 py-3">
             <div class="flex items-center space-x-3">
-                <img src="{{ asset('img/logo3.png') }}" alt="Logo" class="h-8 w-8 rounded-lg">
+                
                 <span class="text-lg font-bold text-gray-800">Buky World</span>
             </div>
-            <form method="POST" action="{{ route('logout') }}" class="flex-shrink-0">
-                @csrf
-                <button type="submit" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors duration-200">
-                    <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            <div class="flex items-center space-x-2">
+                <!-- Botón hamburger -->
+                <button @click="open = !open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition">
+                    <svg x-show="!open" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
-                    <span class="hidden sm:inline">Cerrar sesión</span>
-                    <span class="sm:hidden">Salir</span>
+                    <svg x-show="open" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                 </button>
-            </form>
+                <!-- Botón logout -->
+                <form method="POST" action="{{ route('logout') }}" class="flex-shrink-0">
+                    @csrf
+                    <button type="submit" class="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors duration-200">
+                        <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        <span class="hidden sm:inline">Cerrar sesión</span>
+                        <span class="sm:hidden">Salir</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+        <!-- Menú desplegable -->
+        <div x-show="open" x-transition class="px-4 pb-3">
+            <nav class="space-y-2">
+                <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded-lg text-sm font-medium {{ $active === 'dashboard' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600' }}">Dashboard</a>
+                @if(auth()->user()->hasRole('administrador') || auth()->user()->hasRole('super_admin'))
+                    <a href="{{ route('dashboard.usuarios') }}" class="block px-3 py-2 rounded-lg text-sm font-medium {{ $active === 'usuarios' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-green-50 hover:text-green-600' }}">Usuarios</a>
+                    <a href="{{ route('usuarios.create') }}" class="block px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-green-50 hover:text-green-600">Nuevo Usuario</a>
+                    <a href="{{ route('dashboard.solicitudes') }}" class="block px-3 py-2 rounded-lg text-sm font-medium {{ $active === 'solicitudes' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600' }}">Solicitudes @if($pendingRequests > 0)<span class="ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-xs font-medium text-white">{{ $pendingRequests }}</span>@endif</a>
+                @endif
+                <a href="{{ route('profile.edit') }}" class="block px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-purple-50 hover:text-purple-700">Perfil</a>
+            </nav>
         </div>
     </nav>
 
@@ -26,7 +50,6 @@
         <!-- Logo -->
         <div class="flex h-16 items-center border-b border-gray-200 px-4 bg-gradient-to-r from-blue-50 to-indigo-50">
             <div class="flex items-center space-x-3">
-                <img src="{{ asset('img/logo3.png') }}" alt="Logo" class="h-8 w-8 rounded-lg">
                 <span class="text-lg sm:text-xl font-bold text-gray-800">Buky World</span>
             </div>
         </div>
@@ -100,10 +123,14 @@
                             @endif
                         </a>
                     @endif
-                </nav>
-            </div>
-            
-            <!-- Botón de logout fijo en la parte inferior -->
+                    <!-- Enlace de perfil -->
+                    <a href="{{ route('profile.edit') }}" class="group flex items-center rounded-lg px-3 sm:px-4 py-3 text-sm font-medium text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-colors duration-200">
+                        <svg class="mr-3 h-4 w-4 sm:h-5 sm:w-5 text-gray-500 group-hover:text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span class="truncate">Perfil</span>
+                    </a>
+                                <!-- Botón de logout fijo en la parte inferior -->
             <div class="px-4 py-3 border-t border-gray-200 bg-gray-50">
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
@@ -116,4 +143,7 @@
                 </form>
             </div>
         </div>
+                </nav>
+            </div>
+
     </aside>

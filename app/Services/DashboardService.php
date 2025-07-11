@@ -18,24 +18,12 @@ class DashboardService
 
     public function getUserPets($userId, $userEmail)
     {
-        $cacheKey = $this->generateCacheKey($userId, $userEmail);
-
-        return Cache::remember(
-            $cacheKey,
-            now()->addMinutes($this->cacheMinutes),
-            fn () => $this->fetchUserPets($userId, $userEmail)
-        );
+        return $this->fetchUserPets($userId, $userEmail);
     }
 
     public function getUserStatistics($userId)
     {
-        $cacheKey = "user_statistics:{$userId}";
-
-        return Cache::remember(
-            $cacheKey,
-            now()->addMinutes($this->cacheMinutes),
-            fn () => $this->calculateUserStatistics($userId)
-        );
+        return $this->calculateUserStatistics($userId);
     }
 
     protected function generateCacheKey($userId, $userEmail)

@@ -45,28 +45,25 @@ class UserController extends Controller
     {
         $search = $request->input('search');
         $role = $request->input('role');
-        $cacheKey = 'usuarios_' . md5($search . $role);
 
-        $usuarios = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($search, $role) {
-            $query = User::query()
-                ->with(['roles', 'permissions']); // Eager loading de roles y permisos
+        $query = User::query()
+            ->with(['roles', 'permissions']); // Eager loading de roles y permisos
 
-            if ($search) {
-                $query->where(function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%")
-                          ->orWhere('email', 'like', "%{$search}%");
-                });
-            }
+        if ($search) {
+            $query->where(function ($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
 
-            if ($role) {
-                $query->whereHas('roles', function ($query) use ($role) {
-                    $query->where('name', $role);
-                });
-            }
+        if ($role) {
+            $query->whereHas('roles', function ($query) use ($role) {
+                $query->where('name', $role);
+            });
+        }
 
-            return $query->orderBy('created_at', 'desc')
+        $usuarios = $query->orderBy('created_at', 'desc')
                         ->paginate(10);
-        });
 
         return view('dashboard.usuarios', compact('usuarios'));
     }

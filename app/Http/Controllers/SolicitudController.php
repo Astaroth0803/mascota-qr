@@ -22,27 +22,23 @@ class SolicitudController extends Controller
     {
         // Obtener los filtros de la solicitud
         $search = $request->input('search');
-        $cacheKey = 'solicitudes_' . md5($search);
 
-        // Intentar obtener del caché primero
-        $solicitudes = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($search) {
-            $query = Solicitud::query();
+        $query = Solicitud::query();
 
-            // Filtrar por búsqueda (nombre de mascota, nombre del dueño, o apellido del dueño)
-            if ($search) {
-                $query->where(function ($query) use ($search) {
-                    $query->where('nombre', 'like', '%' . $search . '%')
-                          ->orWhere('nombre_owner', 'like', '%' . $search . '%')
-                          ->orWhere('apellido_owner', 'like', '%' . $search . '%')
-                          ->orWhere('solicitudes.id_pago_yappy', 'like', '%' . $search . '%');
-                });
-            }
+        // Filtrar por búsqueda (nombre de mascota, nombre del dueño, o apellido del dueño)
+        if ($search) {
+            $query->where(function ($query) use ($search) {
+                $query->where('nombre', 'like', '%' . $search . '%')
+                      ->orWhere('nombre_owner', 'like', '%' . $search . '%')
+                      ->orWhere('apellido_owner', 'like', '%' . $search . '%')
+                      ->orWhere('solicitudes.id_pago_yappy', 'like', '%' . $search . '%');
+            });
+        }
 
-            // Paginación de las solicitudes filtradas con eager loading
-            return $query->select('solicitudes.*')
-                        ->orderBy('created_at', 'desc')
-                        ->paginate(10);
-        });
+        // Paginación de las solicitudes filtradas con eager loading
+        $solicitudes = $query->select('solicitudes.*')
+                    ->orderBy('created_at', 'desc')
+                    ->paginate(10);
 
         // Retornar la vista 'dashboard.solicitudes' con las solicitudes filtradas
         return view('dashboard.solicitudes', compact('solicitudes'));

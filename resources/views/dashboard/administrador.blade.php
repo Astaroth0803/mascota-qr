@@ -1,19 +1,12 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-6">
-            <h2 class="font-semibold text-lg sm:text-xl text-gray-800 leading-tight">
-                {{ __('Dashboard - Buky Pet Admin') }}
-            </h2>
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-                <div class="relative flex-1 sm:flex-none">
-                    <input type="text" placeholder="Buscar en el sistema..." class="w-full sm:w-64 border border-gray-300 rounded-md py-2 px-4 pl-10 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg class="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                    </div>
+        <div class="transition-all duration-300 ease-in-out lg:ml-64">
+            <div class="bg-white overflow-hidden shadow rounded-lg p-4 sm:p-6 hover:shadow-lg transition-shadow duration-300 mb-8 mx-2 sm:mx-4 lg:mx-8">
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-6">
+                    <h2 class="font-semibold text-lg sm:text-xl text-gray-800 leading-tight">
+                        {{ __('Dashboard - Buky Pet Admin') }}
+                    </h2>
                 </div>
-                <a href="{{ route('dashboard.usuarios') }}" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm text-center">
-                    <i class="fas fa-users mr-2"></i>Gestionar Usuarios
-                </a>
             </div>
         </div>
     </x-slot>
@@ -21,10 +14,10 @@
     {{-- Incluir el sidebar como componente --}}
     <x-sidebar-menu :active="'dashboard'" :pendingRequests="$solicitudCount ?? 0" />
 
-    {{-- Contenido principal con margen responsive para el sidebar --}}
+    {{-- Contenido principal --}}
     <div class="lg:ml-64 transition-all duration-300 ease-in-out">
         <div class="min-h-screen bg-gray-50">
-            <div class="p-4 sm:p-6 lg:p-8">
+            <div class="p-4 sm:p-6 lg:p-8 mt-4">
                 {{-- Tarjetas de estadísticas --}}
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
                     {{-- Tarjeta de Usuarios --}}
@@ -107,9 +100,9 @@
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-base sm:text-lg font-medium text-gray-900">Actividad de Usuarios</h3>
                             <div class="flex space-x-2">
-                                <button class="text-xs sm:text-sm text-gray-500 hover:text-gray-700">7 días</button>
-                                <button class="text-xs sm:text-sm text-blue-600 font-medium">30 días</button>
-                                <button class="text-xs sm:text-sm text-gray-500 hover:text-gray-700">90 días</button>
+                                <button class="text-xs sm:text-sm text-gray-500 hover:text-gray-700">0 días</button>
+                                <button class="text-xs sm:text-sm text-blue-600 font-medium">0 días</button>
+                                <button class="text-xs sm:text-sm text-gray-500 hover:text-gray-700">0 días</button>
                             </div>
                         </div>
                         <div class="h-48 sm:h-64 lg:h-72">
@@ -205,7 +198,7 @@
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-medium text-gray-900 truncate">Nuevo usuario registrado</p>
-                                    <p class="text-xs text-gray-500">Hace 2 horas</p>
+                                    <p class="text-xs text-gray-500">Hace 0 horas</p>
                                 </div>
                             </div>
                         </div>
@@ -218,7 +211,7 @@
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-medium text-gray-900 truncate">Nueva mascota registrada</p>
-                                    <p class="text-xs text-gray-500">Hace 4 horas</p>
+                                    <p class="text-xs text-gray-500">Hace 0 horas</p>
                                 </div>
                             </div>
                         </div>
@@ -231,7 +224,7 @@
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-medium text-gray-900 truncate">Solicitud aprobada</p>
-                                    <p class="text-xs text-gray-500">Hace 6 horas</p>
+                                    <p class="text-xs text-gray-500">Hace 0 horas</p>
                                 </div>
                             </div>
                         </div>
